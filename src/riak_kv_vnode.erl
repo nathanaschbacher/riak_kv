@@ -1198,7 +1198,16 @@ perform_put({true, Obj},
                      bprops=BProps,
                      reqid=ReqID,
                      index_specs=IndexSpecs}) ->
-    {Obj2, Fake} = riak_kv_mutator:mutate_put(Obj, BProps),
+
+    %% Avoid the riak_kv_mutator code path is no mutators are
+    %% registered.
+    {Obj2, Fake} = case riak_kv_mutator:registered() of
+        undefined ->
+            {Obj, Obj};
+        _ ->
+            riak_kv_mutator:mutate_put(Obj, BProps)
+    end,
+
     {Reply, State2} = actual_put(BKey, Obj2, Fake, IndexSpecs, RB, ReqID, State),
     {Reply, State2}.
 

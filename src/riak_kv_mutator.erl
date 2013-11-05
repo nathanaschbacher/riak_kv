@@ -83,7 +83,7 @@
 
 -module(riak_kv_mutator).
 
--export([register/1, register/2, unregister/1]).
+-export([registered/0, register/1, register/2, unregister/1]).
 -export([get/0]).
 -export([mutate_put/2, mutate_get/1]).
 
@@ -115,6 +115,10 @@ register(Module, Priority) ->
             insert_mutator(Module, Priority, Values2)
     end,
     riak_core_metadata:put({riak_kv, mutators}, list, Modifier).
+
+%% @doc Return list of registered mutators.
+registered() ->
+    riak_core_metadata:get({riak_kv, mutators}, list).
 
 %% @doc Remove a module from the mutator list. Removing a mutator from the
 %% list does not remove the mutator from use for retreiving objects. Any
