@@ -373,6 +373,23 @@ decode_update_request_test_() ->
                                                                                {struct, [{<<"update">>, 
                                                                                           {struct, [{<<"c_flag">>, <<"enable">>}]}}]}}]}}]}, 
                                                     ?MOD_MAP)),
+
+              %% Extract context
+              {ok, Map} = ?MAP_TYPE:update({update,
+                                            [
+                                             {update, {<<"a">>, ?SET_TYPE},{add_all, [<<"a">>, <<"b">>, <<"c">>]}},
+                                             {update, {<<"b">>, ?FLAG_TYPE}, enable},
+                                             {update, {<<"c">>, ?REG_TYPE}, {assign, <<"sean">>}},
+                                             {update, {<<"d">>, ?MAP_TYPE},
+                                              {update, [{update, {<<"e">>, ?COUNTER_TYPE}, {increment,5}}]}}
+                                            ]}, a, ?MAP_TYPE:new()),
+              BinContext = ?MAP_TYPE:to_binary(?MAP_TYPE:precondition_context(Map)),
+              {struct, [_Type, _Value, {<<"context">>, JSONCtx}]} = fetch_response_to_json(set, ?MAP_TYPE:value(Map),
+                                                                                           BinContext,
+                                                                                           ?MOD_MAP),
+              ?assertMatch({map, {update, [{remove, {<<"a">>, ?SET_TYPE}}]}, BinContext},
+                           update_request_from_json(map, {struct, [{<<"remove">>, <<"a_set">>}, {<<"context">>, JSONCtx}]}, ?MOD_MAP)),
+                           
               %% Invalid field names
               ?assertThrow({invalid_field_name, <<"a_hash">>}, update_request_from_json(map, {struct, [{<<"add">>, <<"a_hash">>}]}, ?MOD_MAP)),
               ?assertThrow({invalid_field_name, <<"foo">>}, update_request_from_json(map, {struct, [{<<"remove">>, <<"foo">>}]}, ?MOD_MAP)),
